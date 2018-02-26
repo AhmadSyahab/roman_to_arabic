@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import InputComponent from './InputComponent'
 import StateComponent from './StateComponent'
+import OutputComponent from './OutputComponent'
 
 class Home extends Component {
 	constructor() {	
@@ -22,6 +23,7 @@ class Home extends Component {
 			<div>
 				<InputComponent updatedContent={this.updatedContent} />
 				<StateComponent data={this.props.data} />
+				<OutputComponent result={this.props.result} />
 		    </div> 			
 		)	
 	}
@@ -29,7 +31,8 @@ class Home extends Component {
 
 function mapStateToProps (state) {
   return {
-    data: state.convertReducer.data
+    data: state.convertReducer.data,
+    result: state.outputReducer.result
   }
 }
 
