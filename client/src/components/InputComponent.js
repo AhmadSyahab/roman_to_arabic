@@ -18,6 +18,8 @@ class InputComponent extends Component {
       this.state = {
       	stateInput: '',
       	credit: '',
+      	stateArr: [],
+      	creditArr: [],
       }   
 	}	
 
@@ -29,37 +31,64 @@ class InputComponent extends Component {
 
 
 	updateState(e) {		
-		let arrStr = this.state.stateInput.split(' ');
+		let arrStr = this.state.stateInput.trim().split(' ');
 		if(arrStr[0] !== 'how' && arrStr[2] !== undefined){
-			if(arrStr.indexOf('Credits') === -1 ) {
+			if(arrStr.indexOf('Credits') === -1 && arrStr[1] === 'is' && this.state.stateArr.indexOf(arrStr[0]) === -1) {
 				this.props.add_data(arrStr[0],arrStr[2])
+				let arr = this.state.stateArr
+				arr.push(arrStr[0])
+				this.setState({
+					stateArr: arr
+				})
 				this.props.updatedContent()
-			}else {
-				let newArrStr = this.state.stateInput.split(' is ');
+			}else if (arrStr.indexOf('Credits') === -1 && this.state.stateArr.indexOf(arrStr[0]) !== -1) {
+				alert(`${arrStr[0]} is available`)
+			}else if(arrStr.indexOf('Credits') !== -1) {
+				let canUpdate = true
+				let newArrStr = this.state.stateInput.trim().split(' is ');
 				let splitArr = newArrStr[0].split(' ')
 				let isState = splitArr[splitArr.length-1]
 				let isCredit = Number(newArrStr[1].split(' ')[0])
 				let tempResult = ''
 
+				if(this.state.creditArr.indexOf(isState) !== -1) {
+					alert(`${isState} already available`)	
+					return false
+				}
+
 				for(let i = 0 ; i < splitArr.length-1 ; i++) {
-					this.props.data.forEach(data => {
+					let found = false
+					this.props.data.forEach((data,index) => {
+						if(found === false && data.stringData !== splitArr[i] && index === this.props.data.length-1){
+							alert(`${splitArr[i]} is not available`)
+						    canUpdate = false // check if one different it will update false and will not update the state
+						}
 						if(data.stringData === splitArr[i]){
 							tempResult = tempResult + data.romanData
+							found = true;
 						}
 					})
 				}
-
-				axios.post('http://localhost:3000/convert',{
-					roman : tempResult
-				})
-				.then(result => {
-					let newResult = isCredit/result.data.result
-					this.props.add_data(isState,newResult)
-					this.props.updatedContent()
-				})
-				.catch(err => {
-					console.log(err)
-				})				
+				if(canUpdate) {
+					axios.post('http://localhost:3000/convert',{
+						roman : tempResult
+					})
+					.then(result => {
+						let newResult = isCredit/result.data.result
+						let arr = this.state.creditArr
+						arr.push(isState)
+						this.setState({
+							creditArr: arr
+						})					
+						this.props.add_data(isState,newResult)
+						this.props.updatedContent()
+					})
+					.catch(err => {
+						console.log(err)
+					})
+				}				
+			}else {
+				alert(`${this.state.stateInput} is incorrect format`)
 			}			
 		}else if(arrStr[0] === 'how'){
 			if(arrStr[1] === 'much' && arrStr[arrStr.length-1] === '?'){
@@ -91,7 +120,9 @@ class InputComponent extends Component {
 					this.props.updatedContent()
 				})
 				.catch(err => {
-					console.log(err)
+					this.props.add_result('I have no idea what you are talking about')
+					this.props.updatedContent()
+					return false;
 				})	
 		
 			}else if(arrStr[1] === 'many' && arrStr[2] === "Credits" && arrStr[arrStr.length-1] === '?'){
@@ -131,6 +162,8 @@ class InputComponent extends Component {
 				this.props.add_result('I have no idea what you are talking about')
 				this.props.updatedContent()
 			}				
+		}else {
+			alert(`${this.state.stateInput} is incorrect format`)
 		}
 	}
 
